@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Team git flow</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --bg-2: #f5f4ef;
+  --bg-3: #ebe9e1;
+  --text: #1a1a1a;
+  --text-2: #5f5e5a;
+  --text-3: #888780;
+  --border: rgba(0,0,0,0.12);
+  --shadow-md: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --radius: 10px;
+  --radius-sm: 8px;
+  --green-accent: #5DCAA5;
+  --green-text: #0F6E56;
+  --red-accent: #F09595;
+  --red-text: #A32D2D;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1a1a1a;
+    --bg-2: #262623;
+    --bg-3: #333330;
+    --text: #ededea;
+    --text-2: #b4b2a9;
+    --text-3: #888780;
+    --border: rgba(255,255,255,0.12);
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 48px 32px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1.5;
+  display: flex;
+  justify-content: center;
+}
+
+.gf {
+  width: 100%;
+  max-width: 1100px;
+}
+
+.gf-title {
+  font-size: 28px;
+  font-weight: 600;
+  margin: 0 0 8px;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.gf-subtitle {
+  font-size: 16px;
+  color: var(--text-2);
+  margin: 0 0 32px;
+}
+
+.gf-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  margin-bottom: 22px;
+  font-size: 15px;
+  color: var(--text-2);
+}
+.gf-legend-item { display: flex; align-items: center; gap: 9px; }
+.gf-sw { width: 13px; height: 13px; border-radius: 50%; display: inline-block; }
+.gf-sw.sq { border-radius: 3px; }
+
+.gf-tabs {
+  display: inline-flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  padding: 6px;
+  background: var(--bg-2);
+  border-radius: var(--radius);
+  border: 0.5px solid var(--border);
+}
+.gf-tab {
+  background: transparent;
+  border: none;
+  padding: 11px 22px;
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-2);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.gf-tab:hover {
+  color: var(--text);
+  background: var(--bg);
+}
+.gf-tab.on {
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: var(--shadow-md);
+}
+.gf-tab-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  opacity: 0.65;
+  transition: opacity 0.15s ease;
+}
+.gf-tab:hover .gf-tab-dot,
+.gf-tab.on .gf-tab-dot { opacity: 1; }
+
+.gf-box {
+  background: var(--bg-2);
+  border-radius: var(--radius);
+  border: 0.5px solid var(--border);
+  padding: 32px 28px;
+  margin-bottom: 22px;
+}
+.gf-box svg { display: block; width: 100%; height: auto; }
+
+.gf-rules {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+.gf-rule {
+  background: var(--bg);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px 20px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.gf-rule.ok {
+  border-left: 4px solid var(--green-accent);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+.gf-rule.no {
+  border-left: 4px solid var(--red-accent);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+.gf-rh {
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 5px;
+  display: flex;
+  gap: 9px;
+  align-items: baseline;
+  font-size: 16px;
+}
+.gf-rb { color: var(--text-2); }
+.gf-rh .m { font-size: 14px; font-weight: 700; }
+.gf-rh .m.ok { color: var(--green-text); }
+.gf-rh .m.no { color: var(--red-text); }
+</style>
+</head>
+<body>
+
+<div class="gf">
+
+<h1 class="gf-title">Team git flow</h1>
+<p class="gf-subtitle">Feature branches rebase and squash into development. Releases regular-merge into main.</p>
+
+<div class="gf-legend">
+<span class="gf-legend-item"><span class="gf-sw" style="background:#185FA5"></span>main</span>
+<span class="gf-legend-item"><span class="gf-sw" style="background:#0F6E56"></span>dev</span>
+<span class="gf-legend-item"><span class="gf-sw" style="background:#534AB7"></span>feature</span>
+<span class="gf-legend-item"><span class="gf-sw" style="background:#BA7517"></span>release</span>
+<span class="gf-legend-item"><span class="gf-sw sq" style="background:#5F5E5A"></span>squash</span>
+</div>
+
+<div class="gf-tabs" role="tablist">
+<button class="gf-tab on" onclick="gfShow('full',this)" role="tab"><span class="gf-tab-dot" style="background:#888780"></span>Full flow</button>
+<button class="gf-tab" onclick="gfShow('feature',this)" role="tab"><span class="gf-tab-dot" style="background:#534AB7"></span>Feature</button>
+<button class="gf-tab" onclick="gfShow('release',this)" role="tab"><span class="gf-tab-dot" style="background:#BA7517"></span>Release</button>
+<button class="gf-tab" onclick="gfShow('forbidden',this)" role="tab"><span class="gf-tab-dot" style="background:#A32D2D"></span>Forbidden</button>
+</div>
+
+<div class="gf-box">
+<svg id="gf-svg" viewBox="0 0 680 270" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"></svg>
+</div>
+
+<div class="gf-rules" id="gf-rules"></div>
+
+</div>
+
+<script>
+(function(){
+const C = {
+  main: '#185FA5', dev: '#0F6E56', feat: '#534AB7', rel: '#BA7517',
+  sq: '#5F5E5A', bad: '#A32D2D'
+};
+
+function getVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+const L = { main: 55, dev: 120, feat1: 185, rel: 240 };
+
+function track(y, label, x1, x2) {
+  return `<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="${getVar('--border')}" stroke-width="0.5" stroke-dasharray="3 4"/>
+  <text x="${x1-7}" y="${y+5}" text-anchor="end" font-size="13" fill="${getVar('--text-2')}" font-weight="500">${label}</text>`;
+}
+
+function dot(x, y, color, top, bot, sq) {
+  const shape = sq
+    ? `<rect x="${x-7}" y="${y-7}" width="14" height="14" rx="3" fill="${color}" stroke="${getVar('--bg-2')}" stroke-width="2.5"/>`
+    : `<circle cx="${x}" cy="${y}" r="6.5" fill="${color}" stroke="${getVar('--bg-2')}" stroke-width="2.5"/>`;
+  const t = top ? `<text x="${x}" y="${y-14}" text-anchor="middle" font-size="13" fill="${getVar('--text')}" font-weight="500">${top}</text>` : '';
+  const b = bot ? `<text x="${x}" y="${y+22}" text-anchor="middle" font-size="13" fill="${getVar('--text-2')}">${bot}</text>` : '';
+  return shape + t + b;
+}
+
+function ln(x1,y1,x2,y2,color,w) {
+  return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="${w||2.5}" stroke-linecap="round"/>`;
+}
+
+function cv(x1,y1,x2,y2,color,w) {
+  const cx = (x1+x2)/2;
+  return `<path d="M${x1} ${y1} C ${cx} ${y1}, ${cx} ${y2}, ${x2} ${y2}" fill="none" stroke="${color}" stroke-width="${w||2.5}" stroke-linecap="round"/>`;
+}
+
+function arr(x1,y1,x2,y2,color,label,labelY) {
+  const a = Math.atan2(y2-y1, x2-x1);
+  const hx = x2 - 8*Math.cos(a), hy = y2 - 8*Math.sin(a);
+  const ax = hx + 4.5*Math.cos(a+Math.PI/2), ay = hy + 4.5*Math.sin(a+Math.PI/2);
+  const bx = hx + 4.5*Math.cos(a-Math.PI/2), by = hy + 4.5*Math.sin(a-Math.PI/2);
+  const ly = labelY != null ? labelY : (y1+y2)/2 - 9;
+  const l = label ? `<text x="${(x1+x2)/2}" y="${ly}" text-anchor="middle" font-size="13" fill="${color}" font-weight="500">${label}</text>` : '';
+  return `<line x1="${x1}" y1="${y1}" x2="${hx}" y2="${hy}" stroke="${color}" stroke-width="1.8" stroke-dasharray="4 3"/>
+  <polygon points="${x2},${y2} ${ax},${ay} ${bx},${by}" fill="${color}"/>${l}`;
+}
+
+const V = {};
+
+V.full = {
+  svg: () => {
+    let s = track(L.main, 'main', 75, 640) + track(L.dev, 'dev', 75, 640)
+          + track(L.feat1, 'TD-123', 75, 640) + track(L.rel, 'release', 75, 640);
+    s += ln(75, L.main, 640, L.main, C.main, 2.5);
+    s += ln(75, L.dev, 580, L.dev, C.dev, 2.5);
+    s += cv(160, L.dev, 240, L.feat1, C.feat);
+    s += ln(240, L.feat1, 400, L.feat1, C.feat);
+    s += cv(400, L.feat1, 480, L.dev, C.feat);
+    s += cv(400, L.dev, 480, L.rel, C.rel);
+    s += ln(480, L.rel, 580, L.rel, C.rel);
+    s += cv(580, L.rel, 640, L.main, C.rel);
+    s += dot(85, L.main, C.main, 'v1.0');
+    s += dot(160, L.dev, C.dev, 'base');
+    s += dot(240, L.feat1, C.feat, 'branch');
+    s += dot(290, L.feat1, C.feat, 'wip');
+    s += dot(340, L.feat1, C.feat, 'fix');
+    s += dot(390, L.feat1, C.feat, 'done');
+    s += dot(480, L.dev, C.sq, 'squash', 'TD-123', true);
+    s += dot(480, L.rel, C.rel, 'cut');
+    s += dot(640, L.main, C.main, 'v1.1', 'merge');
+    return s;
+  },
+  rules: [
+    {t:'ok', h:'Branch from dev', b:'Feature starts from latest development.'},
+    {t:'ok', h:'Squash merge to dev', b:'Messy commits collapse into one.'},
+    {t:'ok', h:'Regular merge to main', b:'Via release/*. Keeps main aligned with dev.'}
+  ]
+};
+
+V.feature = {
+  svg: () => {
+    let s = track(L.dev, 'dev', 95, 640) + track(L.feat1, 'TD-123', 95, 640);
+    s += ln(95, L.dev, 640, L.dev, C.dev, 2.5);
+    s += cv(140, L.dev, 210, L.feat1, C.feat);
+    s += ln(210, L.feat1, 580, L.feat1, C.feat);
+    s += cv(580, L.feat1, 640, L.dev, C.feat);
+    s += dot(140, L.dev, C.dev);
+    s += dot(210, L.feat1, C.feat, '1. branch');
+    s += dot(270, L.feat1, C.feat, 'wip');
+    s += dot(320, L.feat1, C.feat, 'fix');
+    s += dot(300, L.dev, C.dev, 'teammate');
+    s += arr(310, L.dev+8, 380, L.feat1-12, C.feat, '3. rebase + force', L.feat1-32);
+    s += dot(400, L.feat1, C.feat, 'rebased');
+    s += dot(480, L.feat1, C.feat, '4. PR');
+    s += dot(640, L.dev, C.sq, '5. squash', 'TD-123', true);
+    s += `<text x="580" y="${L.feat1+38}" text-anchor="middle" font-size="13" fill="${C.bad}" font-weight="500">6. delete</text>`;
+    return s;
+  },
+  rules: [
+    {t:'ok', h:'Commit freely', b:'wip, fix, oops — all squashed later.'},
+    {t:'ok', h:'Rebase to sync', b:'git rebase dev, then push --force-with-lease.'},
+    {t:'no', h:'Never merge dev → feature', b:'Merge commits survive the squash.'}
+  ]
+};
+
+V.release = {
+  svg: () => {
+    let s = track(L.main, 'main', 95, 640) + track(L.dev, 'dev', 95, 640) + track(L.rel, 'release', 95, 640);
+    s += ln(95, L.main, 640, L.main, C.main, 2.5);
+    s += ln(95, L.dev, 640, L.dev, C.dev, 2.5);
+    s += dot(105, L.main, C.main, 'v1.0');
+    s += dot(180, L.dev, C.sq, 'TD-123', null, true);
+    s += dot(240, L.dev, C.sq, 'TR-345', null, true);
+    s += dot(300, L.dev, C.sq, 'RND-456', null, true);
+    s += cv(330, L.dev, 400, L.rel, C.rel);
+    s += ln(400, L.rel, 540, L.rel, C.rel, 2.5);
+    s += dot(400, L.rel, C.rel, '1. cut');
+    s += dot(470, L.rel, C.rel, 'test fix');
+    s += cv(540, L.rel, 620, L.main, C.rel);
+    s += dot(620, L.main, C.main, '2. merge', 'NOT squash');
+    return s;
+  },
+  rules: [
+    {t:'ok', h:'Cut from dev', b:'Branch whenever we decide to ship.'},
+    {t:'ok', h:'Regular merge to main', b:'Squash would diverge main from dev.'},
+    {t:'ok', h:'Ad-hoc cadence', b:'No schedule — bundle what is ready.'}
+  ]
+};
+
+V.forbidden = {
+  svg: () => {
+    let s = track(L.main, 'main', 95, 640) + track(L.dev, 'dev', 95, 640) + track(L.feat1, 'feature', 95, 640);
+    s += ln(95, L.main, 640, L.main, C.main, 2.5);
+    s += ln(95, L.dev, 640, L.dev, C.dev, 2.5);
+    s += ln(95, L.feat1, 640, L.feat1, C.feat, 2.5);
+    s += dot(180, L.dev, C.dev);
+    s += dot(280, L.dev, C.dev);
+    s += arr(280, L.dev+8, 360, L.feat1-12, C.bad, 'merge dev → feature', L.dev+40);
+    s += `<text x="340" y="${L.feat1+38}" text-anchor="middle" font-size="13" fill="${C.bad}" font-weight="500">use rebase</text>`;
+    s += dot(480, L.feat1, C.feat);
+    s += arr(480, L.feat1-12, 560, L.main+12, C.bad, 'direct to main', L.main-12);
+    s += `<text x="560" y="${L.main-28}" text-anchor="middle" font-size="13" fill="${C.bad}" font-weight="500">only via release</text>`;
+    return s;
+  },
+  rules: [
+    {t:'no', h:'No merge dev → feature', b:'Always rebase instead.'},
+    {t:'no', h:'No direct to main', b:'Only release/* reaches main.'},
+    {t:'no', h:'No hotfixes', b:'Publish from feature branch, pin version.'}
+  ]
+};
+
+function drawRules(list) {
+  document.getElementById('gf-rules').innerHTML = list.map(r => {
+    const sym = r.t === 'ok' ? '✓' : '×';
+    return `<div class="gf-rule ${r.t}">
+      <div class="gf-rh"><span class="m ${r.t}">${sym}</span>${r.h}</div>
+      <div class="gf-rb">${r.b}</div>
+    </div>`;
+  }).join('');
+}
+
+window.gfShow = function(name, btn) {
+  document.querySelectorAll('.gf-tab').forEach(b => b.classList.toggle('on', b === btn));
+  const v = V[name];
+  document.getElementById('gf-svg').innerHTML = v.svg();
+  drawRules(v.rules);
+};
+
+gfShow('full', document.querySelector('.gf-tab'));
+})();
+</script>
+
+</body>
+</html>
