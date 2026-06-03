@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Дорога домой · Destin → Leander (Tesla)</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<style>
+:root {
+  --bg: #ffffff;
+  --bg-2: #f5f4ef;
+  --bg-3: #ebe9e1;
+  --text: #1a1a1a;
+  --text-2: #5f5e5a;
+  --text-3: #888780;
+  --border: rgba(0,0,0,0.12);
+  --shadow-md: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-lg: 0 10px 30px rgba(0,0,0,0.12);
+  --radius: 14px;
+  --radius-sm: 10px;
+  --accent: #E0322C;
+  --accent-soft: #fbe3e2;
+  --charge: #2BB673;
+  --charge-soft: #dcf3e8;
+  --charge-text: #16734a;
+  --blue: #3B7DD8;
+  --blue-soft: #e2ecfb;
+  --amber: #E0A52C;
+  --amber-soft: #f8eccf;
+  --purple: #8B6CD8;
+  --purple-soft: #ece4fb;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161616;
+    --bg-2: #1f1f1d;
+    --bg-3: #2a2a27;
+    --text: #ededea;
+    --text-2: #b4b2a9;
+    --text-3: #8a8980;
+    --border: rgba(255,255,255,0.12);
+    --shadow-lg: 0 10px 30px rgba(0,0,0,0.5);
+    --accent-soft: #3a1f1e;
+    --charge-soft: #15302440;
+    --charge-text: #5fd6a0;
+    --blue-soft: #1c2a3f40;
+    --amber-soft: #33290f40;
+    --purple-soft: #241c3a40;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { max-width: 1180px; margin: 0 auto; padding: 32px 20px 80px; }
+
+header { text-align: center; margin-bottom: 28px; }
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent); background: var(--accent-soft);
+  padding: 6px 14px; border-radius: 999px; margin-bottom: 16px;
+}
+h1 {
+  font-size: clamp(28px, 5vw, 44px); line-height: 1.1; margin: 0 0 10px;
+  letter-spacing: -0.02em; font-weight: 800;
+}
+h1 .arrow { color: var(--accent); }
+.subtitle { color: var(--text-2); font-size: clamp(15px, 2.5vw, 18px); margin: 0; }
+.crew {
+  margin: 14px auto 0; display: inline-flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+}
+.crew span {
+  font-size: 13px; background: var(--bg-2); border: 1px solid var(--border);
+  padding: 5px 12px; border-radius: 999px; color: var(--text-2);
+}
+
+.stats {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
+  margin: 30px 0 32px;
+}
+.stat {
+  background: var(--bg-2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px 14px; text-align: center;
+  box-shadow: var(--shadow-md);
+}
+.stat .num { font-size: clamp(20px, 3.6vw, 28px); font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
+.stat .lbl { font-size: 12px; color: var(--text-3); margin-top: 7px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.04em; }
+.stat.red .num { color: var(--accent); }
+.stat.green .num { color: var(--charge); }
+.stat.amber .num { color: var(--amber); }
+
+#map {
+  height: 520px; width: 100%; border-radius: var(--radius);
+  border: 1px solid var(--border); box-shadow: var(--shadow-lg); z-index: 1;
+}
+.map-caption { text-align: center; color: var(--text-3); font-size: 13px; margin: 12px 0 0; }
+
+.pin {
+  display: flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg); box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+  border: 2px solid #fff; font-weight: 800; font-size: 13px; color: #fff;
+}
+.pin > * { transform: rotate(45deg); }
+.pin.home { background: var(--blue); }
+.pin.charge { background: var(--charge); }
+.pin.hotel { background: var(--amber); }
+.pin.dest { background: var(--accent); }
+
+.leaflet-popup-content-wrapper { border-radius: 12px; box-shadow: var(--shadow-lg); }
+.popup h3 { margin: 0 0 4px; font-size: 16px; }
+.popup .meta { color: #666; font-size: 13px; margin: 0 0 6px; }
+.popup p { margin: 0 0 5px; font-size: 13px; line-height: 1.45; }
+.popup .addr { font-size: 12px; color:#888; }
+
+.section-title {
+  font-size: clamp(20px, 3.5vw, 26px); font-weight: 800; letter-spacing: -0.02em;
+  margin: 56px 0 6px; text-align: center;
+}
+.section-sub { text-align: center; color: var(--text-2); margin: 0 0 28px; }
+
+/* schedule table */
+.sched-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-md); }
+table.sched { width: 100%; border-collapse: collapse; min-width: 760px; background: var(--bg-2); font-size: 14px; }
+table.sched th {
+  text-align: left; padding: 13px 14px; font-size: 11.5px; text-transform: uppercase;
+  letter-spacing: 0.05em; color: var(--text-3); background: var(--bg-3);
+  border-bottom: 2px solid var(--border); white-space: nowrap;
+}
+table.sched td { padding: 13px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+table.sched tr:last-child td { border-bottom: none; }
+table.sched tr.dayrow td {
+  background: var(--bg-3); font-weight: 800; font-size: 12.5px; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--text); padding: 10px 14px;
+}
+.t-time { font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.t-stop { font-weight: 700; }
+.t-stop small { display:block; font-weight:600; color: var(--text-3); font-size: 12px; }
+.t-addr { color: var(--text-2); font-size: 12.5px; max-width: 230px; }
+.t-leg { white-space: nowrap; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.t-dur { white-space: nowrap; }
+.chip { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px; display:inline-block; }
+.chip.charge { background: var(--charge-soft); color: var(--charge-text); }
+.chip.home { background: var(--blue-soft); color: var(--blue); }
+.chip.hotel { background: var(--amber-soft); color: var(--amber); }
+.chip.dest { background: var(--accent-soft); color: var(--accent); }
+
+/* battery chart */
+.chart-card { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 26px 24px 20px; box-shadow: var(--shadow-md); }
+.chart-wrap { position: relative; width: 100%; overflow-x: auto; }
+svg.batt { width: 100%; min-width: 700px; height: 240px; display: block; }
+.chart-legend { display: flex; gap: 22px; justify-content: center; flex-wrap: wrap; margin-top: 16px; font-size: 13px; color: var(--text-2); }
+.chart-legend span { display: inline-flex; align-items: center; gap: 7px; }
+.dot { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+
+/* timeline */
+.day-label {
+  display: inline-block; font-size: 13px; font-weight: 800; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--text); background: var(--bg-3);
+  padding: 7px 16px; border-radius: 999px; margin: 36px 0 4px;
+}
+.timeline { position: relative; padding-left: 8px; }
+.tl-item { position: relative; display: grid; grid-template-columns: 56px 1fr; gap: 18px; padding: 12px 0; }
+.tl-rail { position: relative; display: flex; flex-direction: column; align-items: center; }
+.tl-badge {
+  width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; font-weight: 800; font-size: 17px; color: #fff;
+  box-shadow: var(--shadow-md); flex-shrink: 0; z-index: 2;
+}
+.tl-badge.home { background: var(--blue); }
+.tl-badge.charge { background: var(--charge); }
+.tl-badge.hotel { background: var(--amber); }
+.tl-badge.dest { background: var(--accent); }
+.tl-line { position: absolute; top: 44px; bottom: -24px; width: 3px; background: var(--border); z-index: 1; }
+.tl-item:last-child .tl-line { display: none; }
+
+.card {
+  background: var(--bg-2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow-md);
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+.card.clickable { cursor: pointer; }
+.card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.card h3 { margin: 0; font-size: 18px; letter-spacing: -0.01em; }
+.card .time { font-size: 13px; font-weight: 800; color: var(--text); white-space: nowrap; }
+.card .sub { color: var(--text-3); font-size: 13px; font-weight: 600; }
+.card .addr { font-size: 12.5px; color: var(--text-3); margin-top: 4px; }
+.card .addr a { color: var(--blue); text-decoration: none; }
+.card .tags { display: flex; flex-wrap: wrap; gap: 7px; margin: 11px 0 8px; }
+.tag { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 5px; }
+.tag.leg { background: var(--bg-3); color: var(--text-2); }
+.tag.charge { background: var(--charge-soft); color: var(--charge-text); }
+.tag.star { background: var(--amber-soft); color: var(--amber); }
+.tag.dur { background: var(--blue-soft); color: var(--blue); }
+.card p { margin: 8px 0 0; color: var(--text-2); font-size: 14.5px; }
+.card .extra { margin-top: 10px; padding: 10px 12px; border-radius: var(--radius-sm); font-size: 13.5px; }
+.card .extra.food { background: var(--amber-soft); }
+.card .extra.kid { background: var(--purple-soft); }
+.card .extra b { color: var(--text); }
+
+.batt-mini { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 12.5px; color: var(--text-3); }
+.batt-track { flex: 1; height: 8px; border-radius: 999px; background: var(--bg-3); overflow: hidden; max-width: 180px; }
+.batt-fill { height: 100%; border-radius: 999px; }
+
+.notes {
+  margin-top: 48px; background: var(--bg-2); border: 1px solid var(--border);
+  border-left: 4px solid var(--charge); border-radius: var(--radius);
+  padding: 22px 24px; box-shadow: var(--shadow-md);
+}
+.notes h3 { margin: 0 0 12px; font-size: 17px; }
+.notes ul { margin: 0; padding-left: 20px; }
+.notes li { margin: 6px 0; color: var(--text-2); font-size: 14.5px; }
+.notes li b { color: var(--text); }
+
+.backlink { text-align:center; margin-top: 34px; }
+.backlink a {
+  display:inline-flex; align-items:center; gap:8px; text-decoration:none;
+  color: var(--text-2); font-size: 14px; font-weight: 600;
+  background: var(--bg-2); border: 1px solid var(--border); padding: 9px 16px; border-radius: 999px;
+}
+.backlink a:hover { color: var(--text); }
+
+footer { text-align: center; color: var(--text-3); font-size: 13px; margin-top: 40px; }
+
+@media (max-width: 700px) {
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .stats .stat:last-child { grid-column: span 2; }
+  #map { height: 420px; }
+  .tl-item { grid-template-columns: 46px 1fr; gap: 14px; }
+  .tl-badge { width: 38px; height: 38px; font-size: 15px; }
+  .tl-line { top: 38px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <span class="eyebrow">⚡ Tesla · Дорога домой</span>
+    <h1>Destin <span class="arrow">→</span> Leander</h1>
+    <p class="subtitle">Обратный маршрут · 2 дня · ночёвка на пляже в Gulfport · I-10 West</p>
+    <div class="crew">
+      <span>👨 муж</span><span>🤰 жена (7-й мес.)</span><span>👶 дочка 18 мес.</span><span>🗓 середина августа</span>
+    </div>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><div class="num">~750<span style="font-size:.6em">mi</span></div><div class="lbl">всего</div></div>
+    <div class="stat green"><div class="num">~12<span style="font-size:.6em">ч</span></div><div class="lbl">в пути</div></div>
+    <div class="stat amber"><div class="num">1</div><div class="lbl">ночёвка</div></div>
+    <div class="stat"><div class="num">5–6</div><div class="lbl">зарядок-пауз</div></div>
+    <div class="stat red"><div class="num">2</div><div class="lbl">дня</div></div>
+  </div>
+
+  <div id="map"></div>
+  <p class="map-caption">Кликни по маркеру — адрес, время и инфо. 🟢 ⚡ — Tesla Supercharger · 🟡 🛏 — ночёвка у пляжа.</p>
+
+  <!-- ===================== SCHEDULE TABLE ===================== -->
+  <h2 class="section-title">📋 Расписание</h2>
+  <p class="section-sub">Время выезда, длительность стоянки, адрес и время приезда по каждой точке</p>
+  <div class="sched-wrap">
+    <table class="sched">
+      <thead>
+        <tr>
+          <th>Время</th><th>Остановка</th><th>Адрес</th><th>Отрезок</th><th>Стоянка</th><th>Что делаем</th>
+        </tr>
+      </thead>
+      <tbody id="schedBody"></tbody>
+    </table>
+  </div>
+  <p class="map-caption">Времена ориентировочные (с запасом на пробки в Хьюстоне и августовскую жару). Перед выездом проверьте загрузку суперчарджеров в приложении Tesla.</p>
+
+  <!-- ===================== BATTERY CHART ===================== -->
+  <h2 class="section-title">🔋 Заряд по маршруту</h2>
+  <p class="section-sub">Tesla ~250 миль на шоссе · каждый финиш отрезка с запасом 25–40 %</p>
+  <div class="chart-card">
+    <div class="chart-wrap">
+      <svg class="batt" id="battChart" viewBox="0 0 920 240" preserveAspectRatio="none" aria-hidden="true"></svg>
+    </div>
+    <div class="chart-legend">
+      <span><i class="dot" style="background:var(--charge)"></i> Уровень заряда (SoC)</span>
+      <span><i class="dot" style="background:var(--accent)"></i> Зона «пора заряжаться» (&lt;20%)</span>
+      <span><i class="dot" style="background:var(--blue)"></i> Зарядка / ночёвка</span>
+    </div>
+  </div>
+
+  <!-- ===================== TIMELINE ===================== -->
+  <h2 class="section-title">🗺️ План по часам</h2>
+  <p class="section-sub">Кликни по карточке — карта подлетит к точке</p>
+
+  <div class="day-label">Суббота · День 1 · Destin → Gulfport · ~185 миль (расслабленно)</div>
+  <div class="timeline" id="day1"></div>
+
+  <div class="day-label">Воскресенье · День 2 · Gulfport → дом · ~565 миль</div>
+  <div class="timeline" id="day2"></div>
+
+  <!-- ===================== NOTES ===================== -->
+  <div class="notes">
+    <h3>👶🤰 Почему маршрут удобен с малышкой и на 7-м месяце</h3>
+    <ul>
+      <li><b>День 1 — короткий и лёгкий:</b> всего ~185 миль до Gulfport, чтобы к обеду быть на пляже. Бассейн + море + ранний отдых перед длинным днём.</li>
+      <li><b>Частые короткие паузы:</b> отрезки по 110–155 миль — каждые ~2 часа выходим размяться, а не сидим в машине без конца.</li>
+      <li><b>Зарядка = прогулка:</b> остановки совпадают с парками и местами, где дочка побегает — USS Alabama, пляж Gulfport, Buc-ee's в Texas.</li>
+      <li><b>Запас по заряду:</b> финиш каждого отрезка с 25–40 % — никаких нервов «дотянем ли», даже когда кондиционер на максимуме в августовскую жару.</li>
+      <li><b>Отель у пляжа &lt; $200:</b> Courtyard Gulfport Beachfront — бассейн, шаги до белого песка, в 10 мин от суперчарджера D'Iberville.</li>
+    </ul>
+  </div>
+
+  <div class="backlink">
+    <a href="./cybertruck-roadtrip.html">← Маршрут «туда»: Leander → Destin</a>
+  </div>
+
+  <footer>Адреса суперчарджеров и отеля — реальные (Tesla / PlugShare / Marriott), проверьте актуальность перед выездом · карта © OpenStreetMap, CARTO · Leaflet</footer>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+/* ---------------- DATA (return: Destin → Leander) ---------------- */
+const STOPS = [
+  {
+    type:'home', label:'🏠', day:1,
+    name:'Destin, FL', sub:'Старт — Henderson Beach', time:'СБ 7:30',
+    addr:'Henderson Beach area, Destin, FL 32541',
+    coord:[30.3935,-86.4434],
+    detail:'Выезжаем рано, пока прохладно. Машина заряжена на 100 % с вечера.',
+    socDepart:100
+  },
+  {
+    type:'charge', n:1, label:'1', day:1,
+    name:'Mobile, AL', sub:'Supercharger + USS Alabama', time:'СБ ~9:20',
+    addr:'3201 Airport Blvd, Mobile, AL 36606',
+    coord:[30.6790,-88.1162], leg:110, drive:'1ч50', dur:'~60 мин', charge:'до 80 %',
+    detail:'Первая большая пауза. 8 стойл, 150 кВт, 24/7.',
+    kid:'🚢 <b>USS Alabama Battleship Memorial Park</b> — корабли и самолёты под открытым небом, газон, где дочка побегает, туалеты и еда рядом. Идеальная разминка под зарядку.',
+    socArrive:56, socDepart:80
+  },
+  {
+    type:'hotel', label:'🛏', day:1,
+    name:'Gulfport, MS', sub:'Ночёвка · Courtyard Beachfront', time:'СБ ~12:30',
+    addr:'1600 E Beach Blvd, Gulfport, MS 39501',
+    coord:[30.3590,-89.0680], leg:75, drive:'1ч15',
+    detail:'По пути топ-ап на Supercharger D\'Iberville (3586 Sangani Blvd) — 15 мин. Заселяемся, остаток дня — бассейн и пляж.',
+    extra:'🏨 <b>Courtyard by Marriott Gulfport Beachfront</b> · ~$112–130/ночь · бассейн, шаги до белого песка через Beach Blvd. Альтернатива: Centennial Plaza Resort.',
+    kid:'🏖 <b>Пляж Gulfport + Jones Park</b> прямо у отеля — ровный белый песок, где малышке раздолье. Закатная прогулка для мамы.',
+    food:'🦐 Ужин — <b>Shaggy\'s</b> (морепродукты на берегу, очень family-friendly) или <b>Patio 44</b> с видом на гавань.',
+    socArrive:50, socDepart:100, overnight:true
+  },
+  {
+    type:'charge', n:2, label:'2', day:2,
+    name:'Baton Rouge, LA', sub:'Supercharger · завтрак', time:'ВС ~9:30',
+    addr:'9650 Airline Hwy, Baton Rouge, LA 70815',
+    coord:[30.4820,-91.0890], leg:155, drive:'2ч30', dur:'~35 мин', charge:'до 85 %',
+    detail:'11 стойл, быстрые 250 кВт. Заряжаемся и завтракаем.',
+    food:'🍳 <b>The Chimes</b> или <b>Parrain\'s Seafood</b> — луизианская кухня: гамбо, étouffée. Лояльны к детям.',
+    socArrive:38, socDepart:85
+  },
+  {
+    type:'charge', n:3, label:'3', day:2,
+    name:'Sulphur / Lake Charles, LA', sub:'Supercharger · обед', time:'ВС ~11:55',
+    addr:'2615 Ruth St, Sulphur, LA 70665',
+    coord:[30.2180,-93.3650], leg:120, drive:'1ч50', dur:'~45 мин', charge:'до 85 %',
+    detail:'12 стойл, 250 кВт, прямо у I-10.',
+    food:'🦐 Обед — легендарный cajun рядом (shrimp, gumbo, boudin balls). Малышке есть где размяться у магазинов.',
+    socArrive:37, socDepart:85
+  },
+  {
+    type:'charge', n:4, label:'4', day:2,
+    name:'Baytown, TX', sub:'Supercharger · Buc-ee\'s', time:'ВС ~14:30',
+    addr:"4080 East Fwy, Baytown, TX 77521",
+    coord:[29.7860,-94.9760], leg:115, drive:'1ч50', dur:'~30 мин', charge:'до 80 %',
+    detail:'28 стойл, 250 кВт — заряжается быстро.',
+    kid:'🦫 <b>Buc-ee\'s</b> — огромный, чистый, куча места походить, снеки и туалеты. Классическая техасская пауза для ребёнка.',
+    socArrive:39, socDepart:80
+  },
+  {
+    type:'charge', n:5, label:'5', day:2,
+    name:'Sealy, TX', sub:'Supercharger · быстрый топ-ап', time:'ВС ~16:20',
+    addr:'9027 I-10 Frontage Rd, Sealy, TX 77474',
+    coord:[29.7820,-96.1230], leg:80, drive:'1ч20', dur:'~20 мин', charge:'до 70 %',
+    detail:'16 стойл, 250 кВт. Короткий топ-ап для спокойного запаса до дома (через Хьюстон бывают пробки).',
+    socArrive:48, socDepart:70
+  },
+  {
+    type:'dest', label:'🏁', day:2,
+    name:'Leander, TX', sub:'Дом', time:'ВС ~18:25',
+    addr:'1617 Turtle Bay Loop, Leander, TX 78641',
+    coord:[30.5790,-97.8530], leg:110, drive:'1ч45',
+    detail:'Дома к вечеру воскресенья с остатком ~26 % в батарее. 🎉',
+    socArrive:26
+  }
+];
+
+function getCSS(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+const COLORS = { home:getCSS('--blue'), charge:getCSS('--charge'), hotel:getCSS('--amber'), dest:getCSS('--accent') };
+
+/* ---------------- MAP ---------------- */
+const dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+const tileUrl = dark
+  ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+  : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+
+const map = L.map('map', { scrollWheelZoom:false, zoomControl:true });
+L.tileLayer(tileUrl, {
+  attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+  subdomains:'abcd', maxZoom:19
+}).addTo(map);
+
+const latlngs = STOPS.map(s => s.coord);
+L.polyline(latlngs, { color:'#000', opacity:0.12, weight:9, lineJoin:'round' }).addTo(map);
+L.polyline(latlngs, { color:COLORS.charge, weight:4, opacity:0.9, dashArray:'1 9', lineCap:'round' }).addTo(map);
+L.polyline(latlngs, { color:COLORS.dest, weight:3, opacity:0.55 }).addTo(map);
+
+const markers = [];
+STOPS.forEach((s) => {
+  const inner = s.type==='charge' ? '⚡'+s.label : s.label;
+  const icon = L.divIcon({
+    className:'', html:`<div class="pin ${s.type}"><span>${inner}</span></div>`,
+    iconSize:[34,34], iconAnchor:[17,34], popupAnchor:[0,-34]
+  });
+  const m = L.marker(s.coord, { icon }).addTo(map);
+  const legTxt = s.leg ? `📏 ${s.leg} миль · 🕒 ${s.time}` : `🕒 ${s.time}`;
+  m.bindPopup(`<div class="popup"><h3>${s.type==='charge'?'⚡ ':''}${s.name}</h3>
+    <p class="meta">${legTxt}</p>
+    <p>${s.detail}</p>
+    <p class="addr">📍 ${s.addr}</p></div>`);
+  markers.push(m);
+});
+map.fitBounds(L.latLngBounds(latlngs), { padding:[50,50] });
+
+function flyTo(i){
+  map.flyTo(STOPS[i].coord, 9, { duration:0.8 });
+  markers[i].openPopup();
+  document.getElementById('map').scrollIntoView({ behavior:'smooth', block:'center' });
+}
+
+/* ---------------- SCHEDULE TABLE ---------------- */
+(function buildSchedule(){
+  const body = document.getElementById('schedBody');
+  let curDay = 0;
+  STOPS.forEach((s) => {
+    if (s.day !== curDay){
+      curDay = s.day;
+      const t = curDay===1 ? 'Суббота · День 1 — Destin → Gulfport' : 'Воскресенье · День 2 — Gulfport → дом';
+      body.insertAdjacentHTML('beforeend', `<tr class="dayrow"><td colspan="6">${t}</td></tr>`);
+    }
+    const chip = `<span class="chip ${s.type}">${
+      s.type==='charge'?'⚡ заряд':s.type==='home'?'старт':s.type==='hotel'?'ночёвка':'финиш'
+    }</span>`;
+    const leg = s.leg ? `${s.leg} mi<br><span style="color:var(--text-3);font-size:12px">${s.drive||''} в пути</span>` : '—';
+    const dur = s.overnight ? 'ночь' : (s.dur || '—');
+    const act = s.food || s.kid || s.extra || s.detail || '';
+    const actText = act.replace(/<[^>]+>/g,'');
+    body.insertAdjacentHTML('beforeend', `
+      <tr>
+        <td class="t-time">${s.time}</td>
+        <td class="t-stop">${s.name} ${chip}<small>${s.sub}</small></td>
+        <td class="t-addr">${s.addr}</td>
+        <td class="t-leg">${leg}</td>
+        <td class="t-dur">${dur}</td>
+        <td style="color:var(--text-2);font-size:13px;max-width:260px">${actText}</td>
+      </tr>`);
+  });
+})();
+
+/* ---------------- TIMELINE CARDS ---------------- */
+function renderTimeline(dayNum, elId){
+  const el = document.getElementById(elId);
+  STOPS.forEach((s, i) => {
+    if (s.day !== dayNum) return;
+    const tags = [];
+    if (s.leg) tags.push(`<span class="tag leg">📏 ${s.leg} mi${s.drive?' · '+s.drive:''}</span>`);
+    if (s.charge) tags.push(`<span class="tag charge">⚡ ${s.charge}</span>`);
+    if (s.dur && !s.overnight) tags.push(`<span class="tag dur">⏱ ${s.dur}</span>`);
+    if (s.overnight) tags.push(`<span class="tag dur">🌙 ночёвка</span>`);
+
+    let battMini = '';
+    if (s.socArrive != null){
+      const c = s.socArrive < 20 ? getCSS('--accent') : getCSS('--charge');
+      battMini = `<div class="batt-mini"><span>прибытие</span>
+        <div class="batt-track"><div class="batt-fill" style="width:${s.socArrive}%;background:${c}"></div></div>
+        <span><b style="color:var(--text)">${s.socArrive}%</b></span></div>`;
+    }
+    const extras = [];
+    if (s.extra) extras.push(`<div class="extra food">${s.extra}</div>`);
+    if (s.kid) extras.push(`<div class="extra kid">${s.kid}</div>`);
+    if (s.food) extras.push(`<div class="extra food">${s.food}</div>`);
+
+    const mapsUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(s.addr);
+
+    el.insertAdjacentHTML('beforeend', `
+      <div class="tl-item">
+        <div class="tl-rail">
+          <div class="tl-badge ${s.type}">${s.type==='charge'?'⚡':s.label}</div>
+          <div class="tl-line"></div>
+        </div>
+        <div class="card clickable" data-i="${i}">
+          <div class="card-head">
+            <h3>${s.name}</h3>
+            <span class="time">${s.time}</span>
+          </div>
+          <div class="sub">${s.sub}</div>
+          <div class="addr">📍 <a href="${mapsUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${s.addr}</a></div>
+          <div class="tags">${tags.join('')}</div>
+          <p>${s.detail}</p>
+          ${extras.join('')}
+          ${battMini}
+        </div>
+      </div>`);
+  });
+}
+renderTimeline(1, 'day1');
+renderTimeline(2, 'day2');
+document.querySelectorAll('.card.clickable').forEach(c => {
+  c.addEventListener('click', () => flyTo(+c.dataset.i));
+});
+
+/* ---------------- BATTERY SoC CHART ---------------- */
+(function drawBattery(){
+  const svg = document.getElementById('battChart');
+  const W=920, H=240, padL=42, padR=20, padT=20, padB=40;
+  const plotW = W-padL-padR, plotH = H-padT-padB;
+
+  const pts = [];
+  let cum = 0;
+  pts.push({mi:0, soc:STOPS[0].socDepart});
+  for (let i=1;i<STOPS.length;i++){
+    cum += STOPS[i].leg;
+    pts.push({mi:cum, soc:STOPS[i].socArrive, kind:'arrive'});
+    if (STOPS[i].socDepart != null) pts.push({mi:cum, soc:STOPS[i].socDepart, kind:'depart'});
+  }
+  const maxMi = cum;
+  const X = mi => padL + (mi/maxMi)*plotW;
+  const Y = soc => padT + (1-soc/100)*plotH;
+
+  let s = '';
+  [0,20,40,60,80,100].forEach(v=>{
+    const y = Y(v);
+    s += `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="${getCSS('--border')}" stroke-width="1"/>`;
+    s += `<text x="${padL-8}" y="${y+4}" text-anchor="end" font-size="11" fill="${getCSS('--text-3')}">${v}%</text>`;
+  });
+  s += `<rect x="${padL}" y="${Y(20)}" width="${plotW}" height="${Y(0)-Y(20)}" fill="${getCSS('--accent')}" opacity="0.08"/>`;
+  s += `<line x1="${padL}" y1="${Y(20)}" x2="${W-padR}" y2="${Y(20)}" stroke="${getCSS('--accent')}" stroke-width="1.5" stroke-dasharray="5 5" opacity="0.5"/>`;
+
+  let d = `M ${X(pts[0].mi)} ${Y(pts[0].soc)}`;
+  for (let i=1;i<pts.length;i++) d += ` L ${X(pts[i].mi)} ${Y(pts[i].soc)}`;
+  const area = d + ` L ${X(pts[pts.length-1].mi)} ${Y(0)} L ${X(pts[0].mi)} ${Y(0)} Z`;
+  s += `<path d="${area}" fill="${getCSS('--charge')}" opacity="0.10"/>`;
+  s += `<path d="${d}" fill="none" stroke="${getCSS('--charge')}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+
+  pts.forEach(p=>{
+    const low = p.soc < 20;
+    const col = p.kind==='depart' ? getCSS('--blue') : (low?getCSS('--accent'):getCSS('--charge'));
+    s += `<circle cx="${X(p.mi)}" cy="${Y(p.soc)}" r="4" fill="${col}" stroke="${getCSS('--bg-2')}" stroke-width="1.5"/>`;
+    if (p.kind!=='depart'){
+      s += `<text x="${X(p.mi)}" y="${Y(p.soc)-9}" text-anchor="middle" font-size="11" font-weight="700" fill="${col}">${p.soc}%</text>`;
+    }
+  });
+
+  const names = ['Destin','Mobile','Gulfport 🛏','Baton Rouge','Lake Charles','Baytown','Sealy','Leander'];
+  let xc = 0;
+  names.forEach((nm,i)=>{
+    if (i>0) xc += STOPS[i].leg;
+    const x = X(xc);
+    s += `<text x="${x}" y="${H-13}" text-anchor="middle" font-size="10" fill="${getCSS('--text-2')}">${nm}</text>`;
+    s += `<line x1="${x}" y1="${padT}" x2="${x}" y2="${H-padB}" stroke="${getCSS('--border')}" stroke-width="1" opacity="0.5"/>`;
+  });
+
+  svg.innerHTML = s;
+})();
+</script>
+</body>
+</html>
